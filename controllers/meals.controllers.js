@@ -1,13 +1,16 @@
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const Meal = require('../models/meals.model');
+const Restaurant = require('../models/restaurants.model');
 
 exports.createMeal = catchAsync(async (req, res) => {
   const { name, price } = req.body;
+  const { id } = req.params;
 
   const meal = await Meal.create({
-    name: name.toLowerCase(),
+    name,
     price,
+    restaurantId: id,
   });
 
   res.status(201).json({
@@ -22,6 +25,11 @@ exports.findMeals = catchAsync(async (req, res) => {
     where: {
       status: true,
     },
+    include: [
+      {
+        model: Restaurant,
+      },
+    ],
   });
 
   res.status(200).json({
@@ -39,6 +47,11 @@ exports.findMeal = catchAsync(async (req, res) => {
       id,
       status: true,
     },
+    include: [
+      {
+        model: Restaurant,
+      },
+    ],
   });
 
   if (!meal) {

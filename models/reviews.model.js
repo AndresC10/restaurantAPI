@@ -21,7 +21,7 @@ const Review = db.define('review', {
     allowNull: false,
   },
   rating: {
-    type: DataTypes.ENUM(1, 2, 3, 4, 5),
+    type: DataTypes.ENUM('1', '2', '3', '4', '5'),
     allowNull: false,
   },
   status: {

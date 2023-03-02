@@ -3,11 +3,14 @@ const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const bcrypt = require('bcryptjs');
 const generateJWT = require('../utils/jwt');
+const Order = require('../models/orders.model');
+const Meal = require('../models/meals.model');
+const Restaurant = require('../models/restaurants.model');
 
 exports.createUser = catchAsync(async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role = 'normal' } = req.body;
 
-  const user = new User({ name, email, password });
+  const user = new User({ name, email, password, role });
 
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(password, salt);
@@ -15,12 +18,9 @@ exports.createUser = catchAsync(async (req, res, next) => {
 
   await user.save();
 
-  const token = await generateJWT(user.id);
-
   res.status(201).json({
     status: 'success',
     message: 'User created successfully',
-    token,
     user: {
       id: user.id,
       name: user.name,
@@ -60,27 +60,49 @@ exports.login = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.findUsers = catchAsync(async (req, res, next) => {
-  const users = await User.findAll({
+exports.getOrders = catchAsync(async (req, res, next) => {
+  const { sessionUser } = req;
+
+  const orders = await Order.findAll({
     where: {
-      status: true,
+      userId: sessionUser.id,
+    },
+    include: {
+      model: Meal,
+      include: {
+        model: Restaurant,
+      },
     },
   });
 
   res.status(200).json({
     status: 'success',
-    message: 'Users was found successfully',
-    users,
+    message: 'Orders was found successfully',
+    orders,
   });
 });
 
-exports.findUser = catchAsync(async (req, res, next) => {
-  const { user } = req;
+exports.getOrder = catchAsync(async (req, res, next) => {
+  const { sessionUser } = req;
+  const { id } = req.params;
+
+  const order = await Order.findAll({
+    where: {
+      userId: sessionUser.id,
+      id,
+    },
+    include: {
+      model: Meal,
+      include: {
+        model: Restaurant,
+      },
+    },
+  });
 
   res.status(200).json({
     status: 'success',
-    message: 'User was found successfully',
-    user,
+    message: 'Order was found successfully',
+    order,
   });
 });
 

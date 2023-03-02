@@ -3,6 +3,12 @@ const cors = require('cors');
 const { db } = require('../database/db');
 const AppError = require('../utils/appError');
 const globalErrorHandler = require('../controllers/error.controllers');
+const initModel = require('./init.model');
+const { usersRouter } = require('../routes/users.routes');
+const { restaurantRouter } = require('../routes/restaurants.routes');
+const { mealsRouter } = require('../routes/meals.routes');
+const { ordersRouter } = require('../routes/orders.routes');
+const morgan = require('morgan');
 
 class Server {
   constructor() {
@@ -29,7 +35,7 @@ class Server {
 
   routes() {
     this.app.use(this.paths.users, usersRouter);
-    this.app.use(this.paths.restaurants.restaurantsRouter);
+    this.app.use(this.paths.restaurants, restaurantRouter);
     this.app.use(this.paths.meals, mealsRouter);
     this.app.use(this.paths.orders, ordersRouter);
     this.app.all('*', (req, res, next) => {
@@ -44,6 +50,8 @@ class Server {
     db.authenticate()
       .then(() => console.log('Database authenticated'))
       .catch(err => console.log(err));
+
+    initModel();
 
     db.sync()
       .then(() => console.log('Database synced'))

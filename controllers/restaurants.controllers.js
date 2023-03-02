@@ -1,9 +1,6 @@
-const User = require('../models/users.model');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
-const jwt = require('jsonwebtoken');
 const Restaurant = require('../models/restaurants.model');
-const { findUserByToken } = require('../utils/findUserByToken');
 const Review = require('../models/reviews.model');
 
 exports.createRestaurant = catchAsync(async (req, res) => {
@@ -27,6 +24,11 @@ exports.findRestaurants = catchAsync(async (req, res) => {
     where: {
       status: true,
     },
+    include: [
+      {
+        model: Review,
+      },
+    ],
   });
 
   res.status(200).json({
@@ -37,7 +39,23 @@ exports.findRestaurants = catchAsync(async (req, res) => {
 });
 
 exports.findRestaurant = catchAsync(async (req, res) => {
-  const { restaurant } = req;
+  const { id } = req.params;
+
+  const restaurant = await Restaurant.findOne({
+    where: {
+      id,
+      status: true,
+    },
+    include: [
+      {
+        model: Review,
+      },
+    ],
+  });
+
+  if (!restaurant) {
+    return next(new AppError('the restaurant not found', 404));
+  }
 
   res.status(200).json({
     status: 'success',
@@ -70,15 +88,14 @@ exports.deleteRestaurant = catchAsync(async (req, res) => {
 });
 
 exports.createReview = catchAsync(async (req, res) => {
-  const { restaurant } = req;
+  const { id } = req.params;
+  const { sessionUser } = req;
   const { comment, rating } = req.body;
 
-  const user = await findUserByToken();
-
   const review = await Review.create({
-    userId: user.id,
+    userId: sessionUser.id,
     comment,
-    restaurantId: restaurant.id,
+    restaurantId: id,
     rating,
   });
 
@@ -91,26 +108,8 @@ exports.createReview = catchAsync(async (req, res) => {
 
 exports.updateReview = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const token = req.headers.authorization.split(' ')[1];
+  const { sessionUser } = req;
   const { comment, rating } = req.body;
-
-  if (!token) {
-    return next(
-      new AppError('You are not logged in! Please log in to get access', 401)
-    );
-  }
-
-  const decoded = await promisify(jwt.verify)(
-    token,
-    process.env.SECRET_JWT_SEED
-  );
-
-  const user = await User.findOne({
-    where: {
-      id: decoded.id,
-      status: true,
-    },
-  });
 
   const review = await Review.findOne({
     where: {
@@ -119,7 +118,7 @@ exports.updateReview = catchAsync(async (req, res, next) => {
     },
   });
 
-  if (user.id !== review.userId) {
+  if (sessionUser.id !== review.userId) {
     return next(new AppError("You can't modify this review", 401));
   }
 
@@ -133,25 +132,7 @@ exports.updateReview = catchAsync(async (req, res, next) => {
 
 exports.removeReview = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const token = req.headers.authorization.split(' ')[1];
-
-  if (!token) {
-    return next(
-      new AppError('You are not logged in! Please log in to get access', 401)
-    );
-  }
-
-  const decoded = await promisify(jwt.verify)(
-    token,
-    process.env.SECRET_JWT_SEED
-  );
-
-  const user = await User.findOne({
-    where: {
-      id: decoded.id,
-      status: true,
-    },
-  });
+  const { sessionUser } = req;
 
   const review = await Review.findOne({
     where: {
@@ -160,7 +141,7 @@ exports.removeReview = catchAsync(async (req, res, next) => {
     },
   });
 
-  if (user.id !== review.userId) {
+  if (sessionUser.id !== review.userId) {
     return next(new AppError("You can't modify this review", 401));
   }
 

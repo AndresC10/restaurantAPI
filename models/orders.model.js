@@ -25,9 +25,9 @@ const Order = db.define('order', {
     allowNull: false,
   },
   status: {
-    type: DataTypes.BOOLEAN,
+    type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: true,
+    defaultValue: 'active',
   },
 });
 

@@ -18,7 +18,7 @@ const Restaurant = db.define('restaurant', {
     unique: true,
   },
   rating: {
-    type: DataTypes.ENUM(1, 2, 3, 4, 5),
+    type: DataTypes.ENUM('1', '2', '3', '4', '5'),
     allowNull: false,
   },
   status: {
